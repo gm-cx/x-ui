@@ -1,5 +1,4 @@
 # X-UI
-简体中文|[ENGLISH](./README_EN.md)  
 
 > 免责声明：该项目仅供个人学习、交流，请勿用于非法用途，请勿用于生产环境  
 
@@ -37,11 +36,11 @@
 &#x26A1;从原版升级也可使用该命令，数据不会丢失&#x26A1;
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/gm-cx/x-ui/master/install.sh)
 ```    
 For English Users,please use the following command to install English supported version:  
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install_en.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/gm-cx/x-ui/master/install_en.sh)
 ```    
 # 效果预览  
 `面板使用`:  
@@ -174,14 +173,4 @@ xray 状态: 运行
 - [XTLS/Xray-core](https://github.com/XTLS/Xray-core)
 - [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api)  
 
-# 赞助  
 
-如果你觉得本项目对你有用,而且你也恰巧有这方面的需求,你也可以选择通过我的购买链接赞助我  
-- [搬瓦工GIA高端线路](https://bandwagonhost.com/aff.php?aff=65703),仅推荐购买GIA套餐      
-- [Cloudcone性价比主机提供商](https://app.cloudcone.com/?ref=7536)  
-- [Spartan三网4837性价比主机](https://billing.spartanhost.net/aff.php?aff=1875)  
-- USDT TRC20:`TYZ5MAq5YvtCMsjQDq1TJZnMWmjMVGLk2T`  
-
-## Stargazers over time
-
-[![Stargazers over time](https://starchart.cc/FranzKafkaYu/x-ui.svg)](https://starchart.cc/FranzKafkaYu/x-ui)
