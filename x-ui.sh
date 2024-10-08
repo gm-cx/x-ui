@@ -311,7 +311,7 @@ install_bbr() {
 }
 
 update_shell() {
-    wget -O /usr/bin/x-ui -N --no-check-certificate https://github.com/gm-cx/x-ui/raw/master/x-ui.sh
+    wget -O /usr/bin/x-ui -N --no-check-certificate https://raw.githubusercontent.com/gm-cx/x-ui/master/x-ui.sh
     if [[ $? != 0 ]]; then
         echo ""
         LOGE "下载脚本失败，请检查本机能否连接 Github"
@@ -786,7 +786,6 @@ show_usage() {
     echo "x-ui geo          - 更新 x-ui geo数据"
     echo "x-ui cron         - 配置 x-ui 定时任务"
     echo "------------------------------------------"
-    echo "服务器推荐：QQ70666663 "
 }
 
 show_menu() {
