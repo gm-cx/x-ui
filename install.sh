@@ -91,9 +91,9 @@ config_after_install() {
         read -p "请设置面板访问端口:" config_port
         echo -e "${yellow}您的面板访问端口将设定为:${config_port}${plain}"
         echo -e "${yellow}确认设定,设定中${plain}"
-        /usr/local/x-ui/x-ui setting -username ${config_account} -password ${config_password}
+        /usr/local/x-ui-20241008/x-ui setting -username ${config_account} -password ${config_password}
         echo -e "${yellow}账户密码设定完成${plain}"
-        /usr/local/x-ui/x-ui setting -port ${config_port}
+        /usr/local/x-ui-20241008/x-ui setting -port ${config_port}
         echo -e "${yellow}面板端口设定完成${plain}"
     else
         echo -e "${red}已取消设定...${plain}"
@@ -101,8 +101,8 @@ config_after_install() {
             local usernameTemp=$(head -c 6 /dev/urandom | base64)
             local passwordTemp=$(head -c 6 /dev/urandom | base64)
             local portTemp=$(echo $RANDOM)
-            /usr/local/x-ui/x-ui setting -username ${usernameTemp} -password ${passwordTemp}
-            /usr/local/x-ui/x-ui setting -port ${portTemp}
+            /usr/local/x-ui-20241008/x-ui setting -username ${usernameTemp} -password ${passwordTemp}
+            /usr/local/x-ui-20241008/x-ui setting -port ${portTemp}
             echo -e "检测到您属于全新安装,出于安全考虑已自动为您生成随机用户与端口:"
             echo -e "###############################################"
             echo -e "${green}面板登录用户名:${usernameTemp}${plain}"
@@ -127,7 +127,7 @@ install_x-ui() {
             exit 1
         fi
         echo -e "检测到 x-ui 最新版本：${last_version}，开始安装"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-${arch}.tar.gz https://github.com/gm-cx/x-ui/archive/refs/tags/${last_version}.tar.gz
+        wget -N --no-check-certificate -O /usr/local/x-ui-20241008-linux-${arch}.tar.gz https://github.com/gm-cx/x-ui/archive/refs/tags/${last_version}.tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}下载 x-ui 失败，请确保你的服务器能够下载 Github 的文件${plain}"
             exit 1
@@ -136,15 +136,15 @@ install_x-ui() {
         last_version=$1
         url="https://github.com/gm-cx/x-ui/archive/refs/tags/${last_version}.tar.gz"
         echo -e "开始安装 x-ui v$1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-${arch}.tar.gz ${url}
+        wget -N --no-check-certificate -O /usr/local/x-ui-20241008-linux-${arch}.tar.gz ${url}
         if [[ $? -ne 0 ]]; then
             echo -e "${red}下载 x-ui v$1 失败，请确保此版本存在${plain}"
             exit 1
         fi
     fi
 
-    if [[ -e /usr/local/x-ui/ ]]; then
-        rm /usr/local/x-ui/ -rf
+    if [[ -e /usr/local/x-ui-20241008/ ]]; then
+        rm /usr/local/x-ui-20241008/ -rf
     fi
 
     tar zxvf x-ui-linux-${arch}.tar.gz
@@ -153,8 +153,8 @@ install_x-ui() {
     chmod +x x-ui bin/xray-linux-${arch}
     cp -f x-ui.service /etc/systemd/system/
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/gm-cx/x-ui/main/x-ui.sh
-    chmod +x /usr/local/x-ui/x-ui.sh
-    chmod +x /usr/bin/x-ui
+    chmod +x /usr/local/x-ui-20241008/x-ui.sh
+    chmod +x /usr/bin/x-ui-20241008
     config_after_install
     #echo -e "如果是全新安装，默认网页端口为 ${green}54321${plain}，用户名和密码默认都是 ${green}admin${plain}"
     #echo -e "请自行确保此端口没有被其他程序占用，${yellow}并且确保 54321 端口已放行${plain}"
