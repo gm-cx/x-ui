@@ -103,7 +103,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/gm-cx/x-ui/master/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -122,7 +122,7 @@ update() {
         fi
         return 0
     fi
-    bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/gm-cx/x-ui/master/install.sh)
     if [[ $? == 0 ]]; then
         LOGI "更新完成，已自动重启面板 "
         exit 0
@@ -311,7 +311,7 @@ install_bbr() {
 }
 
 update_shell() {
-    wget -O /usr/bin/x-ui -N --no-check-certificate https://github.com/FranzKafkaYu/x-ui/raw/master/x-ui.sh
+    wget -O /usr/bin/x-ui -N --no-check-certificate https://github.com/gm-cx/x-ui/raw/master/x-ui.sh
     if [[ $? != 0 ]]; then
         echo ""
         LOGE "下载脚本失败，请检查本机能否连接 Github"
@@ -768,7 +768,7 @@ disable_auto_clear_log() {
 }
 
 show_usage() {
-    echo "x-ui 管理脚本使用方法: "
+    echo "x-ui 管理脚本常用命令: "
     echo "------------------------------------------"
     echo "x-ui              - 显示管理菜单 (功能更多)"
     echo "x-ui start        - 启动 x-ui 面板"
@@ -786,6 +786,7 @@ show_usage() {
     echo "x-ui geo          - 更新 x-ui geo数据"
     echo "x-ui cron         - 配置 x-ui 定时任务"
     echo "------------------------------------------"
+    echo "服务器推荐：QQ70666663 "
 }
 
 show_menu() {
