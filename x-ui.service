@@ -5,8 +5,8 @@ Wants=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/usr/local/x-ui/
-ExecStart=/usr/local/x-ui/x-ui
+WorkingDirectory=/usr/local/x-ui-20241008/
+ExecStart=/usr/local/x-ui-20241008
 
 [Install]
 WantedBy=multi-user.target
