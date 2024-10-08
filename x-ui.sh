@@ -9,8 +9,8 @@ plain='\033[0m'
 declare -r DEFAULT_LOG_FILE_DELETE_TRIGGER=35
 
 # consts for geo update
-PATH_FOR_GEO_IP='/usr/local/x-ui-20241008/bin/geoip.dat'
-PATH_FOR_GEO_SITE='/usr/local/x-ui-20241008/bin/geosite.dat'
+PATH_FOR_GEO_IP='/usr/local/x-ui/bin/geoip.dat'
+PATH_FOR_GEO_SITE='/usr/local/x-ui/bin/geosite.dat'
 URL_FOR_GEO_IP='https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat'
 URL_FOR_GEO_SITE='https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat'
 
@@ -143,7 +143,7 @@ uninstall() {
     systemctl daemon-reload
     systemctl reset-failed
     rm /etc/x-ui/ -rf
-    rm /usr/local/x-ui-20241008/ -rf
+    rm /usr/local/x-ui/ -rf
 
     echo ""
     echo -e "卸载成功，如果你想删除此脚本，则退出脚本后运行 ${green}rm /usr/bin/x-ui -f${plain} 进行删除"
@@ -162,7 +162,7 @@ reset_user() {
         fi
         return 0
     fi
-    /usr/local/x-ui-20241008/x-ui setting -username admin -password admin
+    /usr/local/x-ui/x-ui setting -username admin -password admin
     echo -e "用户名和密码已重置为 ${green}admin${plain}，现在请重启面板"
     confirm_restart
 }
@@ -175,13 +175,13 @@ reset_config() {
         fi
         return 0
     fi
-    /usr/local/x-ui-20241008/x-ui setting -reset
+    /usr/local/x-ui/x-ui setting -reset
     echo -e "所有面板设置已重置为默认值，现在请重启面板，并使用默认的 ${green}54321${plain} 端口访问面板"
     confirm_restart
 }
 
 check_config() {
-    info=$(/usr/local/x-ui-20241008/x-ui setting -show true)
+    info=$(/usr/local/x-ui/x-ui setting -show true)
     if [[ $? != 0 ]]; then
         LOGE "get current settings error,please check logs"
         show_menu
@@ -195,7 +195,7 @@ set_port() {
         LOGD "已取消"
         before_show_menu
     else
-        /usr/local/x-ui-20241008/x-ui setting -port ${port}
+        /usr/local/x-ui/x-ui setting -port ${port}
         echo -e "设置端口完毕，现在请重启面板，并使用新设置的端口 ${green}${port}${plain} 访问面板"
         confirm_restart
     fi
@@ -298,7 +298,7 @@ show_log() {
 }
 
 migrate_v2_ui() {
-    /usr/local/x-ui-20241008/x-ui v2-ui
+    /usr/local/x-ui/x-ui v2-ui
 
     before_show_menu
 }
