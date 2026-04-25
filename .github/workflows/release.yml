@@ -3,11 +3,11 @@ name: Release X-ui (amd64 only)
 on:
   push:
     tags:
-      - '0.*'               # 匹配以 0. 开头的标签，例如 0.1.0
-  workflow_dispatch:        # 支持手动触发
+      - '0.*'
+  workflow_dispatch:
 
 permissions:
-  contents: write           # 授予创建 Release 和上传资产的权限
+  contents: write
 
 jobs:
   build:
@@ -25,7 +25,6 @@ jobs:
       - name: Get latest Xray version and download URL
         id: get_xray
         run: |
-          # 使用 GitHub Token 认证以防 API 速率限制
           API_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/XTLS/Xray-core/releases/latest)
           VERSION=$(echo "$API_RESPONSE" | jq -r .tag_name)
@@ -35,15 +34,17 @@ jobs:
 
       - name: Download Xray core
         run: |
-          mkdir -p x-ui/bin
-          cd x-ui/bin
+          # 使用一个独立的临时目录存放 Xray 文件
+          mkdir -p xray_temp/bin
+          cd xray_temp/bin
           wget -q "${{ steps.get_xray.outputs.download_url }}" -O xray.zip
           unzip -q xray.zip
           rm -f xray.zip geoip.dat geosite.dat
           mv xray xray-linux-amd64
+          cd ../..
 
       - name: Download geoip.dat and geosite.dat (official V2Fly)
-        working-directory: x-ui/bin
+        working-directory: xray_temp/bin
         run: |
           wget -q https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
           wget -q https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
@@ -51,17 +52,24 @@ jobs:
 
       - name: Build x-ui binary
         run: |
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o x-ui -v main.go
+          # 将二进制输出为 xui-bin，避免与目录名冲突
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o xui-bin -v main.go
 
       - name: Prepare package directory
         run: |
-          mkdir -p x-ui
-          cp x-ui x-ui/x-ui
-          cp x-ui.service x-ui/
-          cp x-ui.sh x-ui/
+          # 创建干净的打包目录
+          mkdir -p package/x-ui/bin
+          # 复制主程序并重命名
+          cp xui-bin package/x-ui/x-ui
+          chmod +x package/x-ui/x-ui
+          # 复制服务文件和脚本（如果存在）
+          cp x-ui.service package/x-ui/ 2>/dev/null || true
+          cp x-ui.sh package/x-ui/ 2>/dev/null || true
+          # 复制 Xray 及其 geo 文件
+          cp xray_temp/bin/* package/x-ui/bin/
 
       - name: Package into tar.gz
-        run: tar -czf x-ui-linux-amd64.tar.gz x-ui
+        run: tar -czf x-ui-linux-amd64.tar.gz -C package x-ui
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
