@@ -3,8 +3,13 @@ name: Release X-ui (amd64 only)
 on:
   push:
     tags:
-      - '2026'
+      - '0.*'               # 匹配以 0. 开头的标签，例如 0.1.0
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name (e.g., 20260425)'
+        required: true
+        default: '0.1.0'     # 可以与你的版本习惯一致，但手动时可覆盖
 
 permissions:
   contents: write
@@ -34,7 +39,6 @@ jobs:
 
       - name: Download Xray core
         run: |
-          # 使用一个独立的临时目录存放 Xray 文件
           mkdir -p xray_temp/bin
           cd xray_temp/bin
           wget -q "${{ steps.get_xray.outputs.download_url }}" -O xray.zip
@@ -52,29 +56,29 @@ jobs:
 
       - name: Build x-ui binary
         run: |
-          # 将二进制输出为 xui-bin，避免与目录名冲突
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o xui-bin -v main.go
 
       - name: Prepare package directory
         run: |
-          # 创建干净的打包目录
           mkdir -p package/x-ui/bin
-          # 复制主程序并重命名
           cp xui-bin package/x-ui/x-ui
           chmod +x package/x-ui/x-ui
-          # 复制服务文件和脚本（如果存在）
           cp x-ui.service package/x-ui/ 2>/dev/null || true
           cp x-ui.sh package/x-ui/ 2>/dev/null || true
-          # 复制 Xray 及其 geo 文件
-          cp xray_temp/bin/* package/x-ui/bin/
+          cp -r xray_temp/bin/* package/x-ui/bin/
 
       - name: Package into tar.gz
         run: tar -czf x-ui-linux-amd64.tar.gz -C package x-ui
 
       - name: Create Release and Upload Asset
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
+          # 重要：手动触发时使用 inputs.tag_name，推送标签时使用 github.ref_name
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag_name }}
           files: x-ui-linux-amd64.tar.gz
           draft: true
           prerelease: true
           generate_release_notes: true
+        # 确保手动触发时 tag_name 不为空
+        if: ${{ (github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name != '') }}
