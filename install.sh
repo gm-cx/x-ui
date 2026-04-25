@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
-
 cur_dir=$(pwd)
 
 # check root
@@ -30,7 +28,6 @@ else
 fi
 
 arch=$(arch)
-
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "s390x" || $arch == "amd64" ]]; then
     arch="amd64"
 elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
@@ -39,7 +36,6 @@ else
     arch="amd64"
     echo -e "${red}检测架构失败，使用默认架构: ${arch}${plain}"
 fi
-
 echo "架构: ${arch}"
 
 if [ $(getconf WORD_BIT) != '32' ] && [ $(getconf LONG_BIT) != '64' ]; then
@@ -48,8 +44,6 @@ if [ $(getconf WORD_BIT) != '32' ] && [ $(getconf LONG_BIT) != '64' ]; then
 fi
 
 os_version=""
-
-# os version
 if [[ -f /etc/os-release ]]; then
     os_version=$(awk -F'[= ."]' '/VERSION_ID/{print $3}' /etc/os-release)
 fi
@@ -120,48 +114,47 @@ install_x-ui() {
     systemctl stop x-ui
     cd /usr/local/
 
+    # 如果传入了版本参数，则直接使用该版本；否则尝试从 GitHub API 获取最新版本
     if [ $# == 0 ]; then
-        last_version=$(curl -Lsk "https://api.github.com/repos/gm-cx/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        # 修正 1: API URL 必须包含正确的仓库路径
+        api_url="https://api.github.com/repos/gm-cx/x-ui/releases/latest"
+        echo -e "正在从 $api_url 获取最新版本信息..."
+        last_version=$(curl -Lsk "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$last_version" ]]; then
             echo -e "${red}检测 x-ui 版本失败，可能是超出 Github API 限制，请稍后再试，或手动指定 x-ui 版本安装${plain}"
             exit 1
         fi
         echo -e "检测到 x-ui 最新版本：${last_version}，开始安装"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-${arch}.tar.gz https://github.com/gm-cx/releases/download/${last_version}/x-ui-linux-${arch}.tar.gz
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载 x-ui 失败，请确保你的服务器能够下载 Github 的文件${plain}"
-            exit 1
-        fi
+        download_url="https://github.com/gm-cx/x-ui/releases/download/${last_version}/x-ui-linux-${arch}.tar.gz"
     else
+        # 手动指定版本
         last_version=$1
-        url="https://github.com/gm-cx/releases/download/${last_version}/x-ui-linux-${arch}.tar.gz"
-        echo -e "开始安装 x-ui v$1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-${arch}.tar.gz ${url}
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载 x-ui v$1 失败，请确保此版本存在${plain}"
-            exit 1
-        fi
+        echo -e "开始安装 x-ui v${last_version}"
+        download_url="https://github.com/gm-cx/x-ui/releases/download/${last_version}/x-ui-linux-${arch}.tar.gz"
+    fi
+
+    # 修正 2: 动态构造下载 URL，避免硬编码路径错误
+    wget -N --no-check-certificate -O /usr/local/x-ui-linux-${arch}.tar.gz "${download_url}"
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}下载 x-ui 失败，请确保你的服务器能够下载 Github 的文件，且版本 ${last_version} 存在${plain}"
+        exit 1
     fi
 
     if [[ -e /usr/local/x-ui/ ]]; then
         rm /usr/local/x-ui/ -rf
     fi
-
     tar zxvf x-ui-linux-${arch}.tar.gz
     rm x-ui-linux-${arch}.tar.gz -f
     cd x-ui
     chmod +x x-ui bin/xray-linux-${arch}
     cp -f x-ui.service /etc/systemd/system/
-    wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/gm-cx/main/x-ui.sh
+    # 修正 3: 确保 x-ui.sh 脚本地址正确
+    xui_sh_url="https://raw.githubusercontent.com/gm-cx/x-ui/main/x-ui.sh"
+    wget --no-check-certificate -O /usr/bin/x-ui "$xui_sh_url"
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
     config_after_install
-    #echo -e "如果是全新安装，默认网页端口为 ${green}54321${plain}，用户名和密码默认都是 ${green}admin${plain}"
-    #echo -e "请自行确保此端口没有被其他程序占用，${yellow}并且确保 54321 端口已放行${plain}"
-    #    echo -e "若想将 54321 修改为其它端口，输入 x-ui 命令进行修改，同样也要确保你修改的端口也是放行的"
-    #echo -e ""
-    #echo -e "如果是更新面板，则按你之前的方式访问面板"
-    #echo -e ""
+
     systemctl daemon-reload
     systemctl enable x-ui
     systemctl start x-ui
@@ -181,7 +174,7 @@ install_x-ui() {
     echo -e "x-ui update       - 更新 x-ui 面板"
     echo -e "x-ui install      - 安装 x-ui 面板"
     echo -e "x-ui uninstall    - 卸载 x-ui 面板"
-    echo -e "x-ui geo          - 更新 geo  数据"
+    echo -e "x-ui geo          - 更新 geo 数据"
     echo -e "----------------------------------------------"
 }
 
