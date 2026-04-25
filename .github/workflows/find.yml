@@ -1,11 +1,19 @@
-name: 批量替换示例
+name: 批量替换 .go .sh .html 文件（带详细日志）
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:   # 支持手动触发
+  workflow_dispatch:
+    inputs:
+      old_string:
+        description: '要替换的旧字符串'
+        required: true
+        default: '旧地址'
+      new_string:
+        description: '替换后的新字符串'
+        required: true
+        default: '新地址'
 
-# 强制使用 Node.js 24 运行时（避免 actions/checkout@v4 的警告）
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -13,34 +21,60 @@ permissions:
   contents: write
 
 jobs:
-  replace-job:
+  batch-replace:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-        # 注：@v4 目前仍是稳定版，配合上面环境变量可在 Node 24 下运行
+      - uses: actions/checkout@v4
 
-      - name: 执行查找与替换（使用原生 sed，不依赖第三方 Action）
+      - name: 设置替换内容
+        id: vars
         run: |
-          # 示例：将所有 .go 文件中的 "旧地址" 替换为 "新地址"
-          # 请根据实际需求修改搜索和替换文本
-          OLD="FranzKafkaYu/x-ui"
-          NEW="gm-cx/x-ui"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "old=${{ github.event.inputs.old_string }}" >> $GITHUB_OUTPUT
+            echo "new=${{ github.event.inputs.new_string }}" >> $GITHUB_OUTPUT
+          else
+            # 请修改下面的默认值
+            echo "old=FranzKafkaYu/x-ui" >> $GITHUB_OUTPUT
+            echo "new=gm-cx" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 调试：列出所有待处理的文件
+        run: |
+          echo "====== 找到的 .go .sh .html 文件 ======"
+          find . -type f \( -name "*.go" -o -name "*.sh" -o -name "*.html" \) -not -path "./.git/*" | tee found_files.txt
+          echo "共 $(wc -l < found_files.txt) 个文件"
+
+      - name: 调试：检查旧字符串是否存在
+        run: |
+          OLD="${{ steps.vars.outputs.old }}"
+          echo "正在搜索旧字符串: '$OLD'"
+          find . -type f \( -name "*.go" -o -name "*.sh" -o -name "*.html" \) -not -path "./.git/*" -exec grep -Hn "$OLD" {} \; || echo "【警告】未找到任何包含旧字符串的文件"
+
+      - name: 执行批量替换
+        run: |
+          OLD="${{ steps.vars.outputs.old }}"
+          NEW="${{ steps.vars.outputs.new }}"
           
-          # 查找所有 .go 文件并进行替换（排除 .git 目录）
-          find . -type f -name "*.go" -not -path "./.git/*" -exec sed -i "s|${OLD}|${NEW}|g" {} \;
+          if [ -z "$OLD" ] || [ -z "$NEW" ]; then
+            echo "错误：旧字符串或新字符串为空"
+            exit 1
+          fi
           
-          # 如果需要处理其他文件类型，可以继续添加，例如：
-          # find . -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.toml" \) -exec sed -i "s|${OLD}|${NEW}|g" {} \;
+          echo "正在将 '$OLD' 替换为 '$NEW'"
+          # 使用 '#' 作为分隔符，避免与路径中的 '/' 冲突
+          find . -type f \( -name "*.go" -o -name "*.sh" -o -name "*.html" \) -not -path "./.git/*" -exec sed -i "s#${OLD}#${NEW}#g" {} \;
           
-          echo "替换完成，变更文件列表："
+          echo "替换完成，以下文件有变更："
           git status --short
 
-      - name: 提交并推送更改
+      - name: 如果有变更则提交推送
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
-          # 仅当有变更时才提交
-          git diff --staged --quiet || git commit -m "chore: 批量替换代码中的地址"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: 批量替换（${{ steps.vars.outputs.old }} -> ${{ steps.vars.outputs.new }}）"
+            git push
+          else
+            echo "没有检测到任何变更，跳过提交。"
+          fi
