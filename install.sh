@@ -12,24 +12,29 @@ cur_dir=$(pwd)
 # 检查 root 权限
 [[ $EUID -ne 0 ]] && echo -e "${red}错误：${plain} 必须使用root用户运行此脚本！\n" && exit 1
 
-# 检测系统发行版
+# 检测系统发行版（修正版：优先检测 Red Hat 系列）
+release=""
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
-elif cat /etc/issue | grep -Eqi "debian"; then
-    release="debian"
-elif cat /etc/issue | grep -Eqi "ubuntu"; then
-    release="ubuntu"
-elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
+elif [[ -f /etc/centos-release ]]; then
     release="centos"
-elif cat /proc/version | grep -Eqi "debian"; then
-    release="debian"
-elif cat /proc/version | grep -Eqi "ubuntu"; then
-    release="ubuntu"
-elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
+elif grep -Eqi "centos|red hat|redhat" /etc/issue &>/dev/null; then
     release="centos"
+elif grep -Eqi "debian" /etc/issue &>/dev/null; then
+    release="debian"
+elif grep -Eqi "ubuntu" /etc/issue &>/dev/null; then
+    release="ubuntu"
+elif grep -Eqi "centos|red hat|redhat" /proc/version &>/dev/null; then
+    release="centos"
+elif grep -Eqi "debian" /proc/version &>/dev/null; then
+    release="debian"
+elif grep -Eqi "ubuntu" /proc/version &>/dev/null; then
+    release="ubuntu"
 else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
+
+echo -e "${green}检测到系统：${release}${plain}"
 
 # 检测架构
 arch=$(uname -m)
@@ -136,8 +141,7 @@ install_x-ui() {
 
     local url="https://github.com/gm-cx/x-ui/releases/download/${last_version}/x-ui-linux-${arch}.tar.gz"
     echo -e "${green}下载预编译包: ${url}${plain}"
-    wget -N --no-check-certificate -O "/usr/local/x-ui-linux-${arch}.tar.gz" "$url" && {
-        # 解压并安装预编译版本
+    if wget -N --no-check-certificate -O "/usr/local/x-ui-linux-${arch}.tar.gz" "$url"; then
         tar zxvf x-ui-linux-${arch}.tar.gz
         rm -f x-ui-linux-${arch}.tar.gz
         cd x-ui
@@ -145,17 +149,17 @@ install_x-ui() {
         cp -f x-ui.service /etc/systemd/system/
         cp x-ui.sh /usr/local/x-ui/ 2>/dev/null
         cd ..
-        # 注意：这里需要确保目录结构正确
+        # 确保目录正确
         if [[ -d x-ui ]]; then
             rm -rf /usr/local/x-ui
             mv x-ui /usr/local/
         fi
-    } || {
+    else
         echo -e "${yellow}下载预编译包失败，将尝试本地编译安装${plain}"
         compile_xui
-    }
+    fi
 
-    # 下载管理脚本（始终从你的仓库获取最新版本）
+    # 下载管理脚本
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/gm-cx/x-ui/main/x-ui.sh
     chmod +x /usr/bin/x-ui
 
@@ -164,7 +168,7 @@ install_x-ui() {
     systemctl enable x-ui
     systemctl start x-ui
 
-    # 安全配置提示
+    # 安全配置询问
     config_after_install
 
     echo -e "${green}x-ui 安装完成！${plain}"
@@ -172,7 +176,7 @@ install_x-ui() {
     echo -e "Web面板端口: 54321 (请自行修改用户名/密码)"
 }
 
-# 安全配置函数（可选）
+# 安全配置函数
 config_after_install() {
     echo -e "${yellow}是否立即修改面板用户名/密码/端口？[y/n]${plain}"
     read -r choice
@@ -187,7 +191,7 @@ config_after_install() {
     fi
 }
 
-# 脚本入口
+# 执行安装
 echo -e "${green}开始安装 x-ui ...${plain}"
 install_base
 install_x-ui "$1"
