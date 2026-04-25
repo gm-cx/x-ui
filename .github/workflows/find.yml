@@ -18,38 +18,26 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0      # 拉取完整历史，便于 rebase
+          fetch-depth: 0
 
       - name: 执行批量替换（所有文件）
         run: |
           OLD="github.com/FranzKafkaYu/x-ui"
           NEW="github.com/gm-cx/x-ui"
           echo "正在将所有文件中的 '$OLD' 替换为 '$NEW'"
-          
-          # 查找所有文件（排除 .git 目录），并执行替换（使用 # 作为分隔符）
-          find . -type f -not -path "./.git/*" \
-            -exec sed -i "s#${OLD}#${NEW}#g" {} \;
-          
-          # 显示哪些文件被修改了
+          find . -type f -not -path "./.git/*" -exec sed -i "s#${OLD}#${NEW}#g" {} \;
           echo "已修改的文件："
           git status --short
 
-      - name: 提交变更
+      - name: 提交变更并强制推送（不拉取任何远程更新）
         run: |
-          # 如果没有变更，直接退出
           if git diff --quiet; then
             echo "没有检测到任何变更，跳过提交。"
             exit 0
           fi
-          
           git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'   # 修正：原来是 config.user.email
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
           git commit -m "chore: 替换仓库地址为 github.com/gm-cx/x-ui（全文件）"
-
-      - name: 拉取远程最新并推送
-        run: |
-          # 拉取你自己的远程 origin/main 的最新变更（变基方式，保持线性历史）
-          git pull --rebase origin main
-          # 推送更改
-          git push origin main
+          # 直接强制推送到自己的远程仓库，不拉取任何远程更新
+          git push --force origin main
