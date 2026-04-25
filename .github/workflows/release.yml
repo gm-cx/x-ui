@@ -1,0 +1,72 @@
+name: Release X-ui (amd64 only)
+
+on:
+  push:
+    tags:
+      - '0.*'               # 匹配以 0. 开头的标签，例如 0.1.0
+  workflow_dispatch:        # 支持手动触发
+
+permissions:
+  contents: write           # 授予创建 Release 和上传资产的权限
+
+jobs:
+  build:
+    name: Build for amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.18'
+
+      - name: Get latest Xray version and download URL
+        id: get_xray
+        run: |
+          # 使用 GitHub Token 认证以防 API 速率限制
+          API_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/XTLS/Xray-core/releases/latest)
+          VERSION=$(echo "$API_RESPONSE" | jq -r .tag_name)
+          URL=$(echo "$API_RESPONSE" | jq -r '.assets[] | select(.name=="Xray-linux-64.zip") | .browser_download_url')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "download_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Download Xray core
+        run: |
+          mkdir -p x-ui/bin
+          cd x-ui/bin
+          wget -q "${{ steps.get_xray.outputs.download_url }}" -O xray.zip
+          unzip -q xray.zip
+          rm -f xray.zip geoip.dat geosite.dat
+          mv xray xray-linux-amd64
+
+      - name: Download geoip.dat and geosite.dat (official V2Fly)
+        working-directory: x-ui/bin
+        run: |
+          wget -q https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
+          wget -q https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
+          mv dlc.dat geosite.dat
+
+      - name: Build x-ui binary
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o x-ui -v main.go
+
+      - name: Prepare package directory
+        run: |
+          mkdir -p x-ui
+          cp x-ui x-ui/x-ui
+          cp x-ui.service x-ui/
+          cp x-ui.sh x-ui/
+
+      - name: Package into tar.gz
+        run: tar -czf x-ui-linux-amd64.tar.gz x-ui
+
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: x-ui-linux-amd64.tar.gz
+          draft: true
+          prerelease: true
+          generate_release_notes: true
