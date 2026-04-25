@@ -3,13 +3,14 @@ name: 替换仓库地址（FranzKafkaYu -> gm-cx）
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:    # 允许手动触发
+  workflow_dispatch:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # 消除 Node.js 20 警告
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
+  workflows: write          # 允许修改 .github/workflows 下的文件
 
 jobs:
   replace-url:
@@ -29,7 +30,7 @@ jobs:
           echo "已修改的文件："
           git status --short
 
-      - name: 提交变更并强制推送（不拉取任何远程更新）
+      - name: 提交变更并强制推送
         run: |
           if git diff --quiet; then
             echo "没有检测到任何变更，跳过提交。"
@@ -39,5 +40,4 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
           git commit -m "chore: 替换仓库地址为 github.com/gm-cx/x-ui（全文件）"
-          # 直接强制推送到自己的远程仓库，不拉取任何远程更新
           git push --force origin main
