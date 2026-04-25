@@ -1,0 +1,46 @@
+name: 批量替换示例
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:   # 支持手动触发
+
+# 强制使用 Node.js 24 运行时（避免 actions/checkout@v4 的警告）
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  replace-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        # 注：@v4 目前仍是稳定版，配合上面环境变量可在 Node 24 下运行
+
+      - name: 执行查找与替换（使用原生 sed，不依赖第三方 Action）
+        run: |
+          # 示例：将所有 .go 文件中的 "旧地址" 替换为 "新地址"
+          # 请根据实际需求修改搜索和替换文本
+          OLD="FranzKafkaYu/x-ui"
+          NEW="gm-cx/x-ui"
+          
+          # 查找所有 .go 文件并进行替换（排除 .git 目录）
+          find . -type f -name "*.go" -not -path "./.git/*" -exec sed -i "s|${OLD}|${NEW}|g" {} \;
+          
+          # 如果需要处理其他文件类型，可以继续添加，例如：
+          # find . -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.toml" \) -exec sed -i "s|${OLD}|${NEW}|g" {} \;
+          
+          echo "替换完成，变更文件列表："
+          git status --short
+
+      - name: 提交并推送更改
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          # 仅当有变更时才提交
+          git diff --staged --quiet || git commit -m "chore: 批量替换代码中的地址"
+          git push
