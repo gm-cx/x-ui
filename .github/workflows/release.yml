@@ -3,7 +3,7 @@ name: Release X-ui (amd64 only)
 on:
   push:
     tags:
-      - '0.*'
+      - '2026'
   workflow_dispatch:
 
 permissions:
